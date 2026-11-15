@@ -9,7 +9,10 @@ public class GrafMuhafiz : MonoBehaviour
     [Header("Baðlantýlar")]
     [SerializeField] private YolNoktasiGrafi graf;
     [SerializeField] private Transform oyuncu;
-    [SerializeField] private YolNoktasi[] devriyeRotasi; // Devriye gezilecek noktalar
+    [SerializeField] private YolNoktasi[] devriyeRotasi;
+
+    [Header("Devriye Tipi")]
+    [SerializeField] private bool pingPongDevriye = true; // Ýþaretliyse gidip-gelir, deðilse döngüsel gezer
 
     [Header("Hareket ve Görüþ Ayarlarý")]
     [SerializeField] private float devriyeHizi = 3f;
@@ -18,7 +21,7 @@ public class GrafMuhafiz : MonoBehaviour
     [SerializeField] private float menzil = 15f;
     [SerializeField] private float gorusAcisi = 90f;
     [SerializeField] private float gozYuksekligi = 0.6f;
-    [SerializeField] private float kayipSuresi = 3f; // Kaç saniye göremezse devriyeye dönsün
+    [SerializeField] private float kayipSuresi = 3f;
     [SerializeField] private LayerMask engeller;
 
     private Durum durum = Durum.Devriye;
@@ -26,6 +29,7 @@ public class GrafMuhafiz : MonoBehaviour
     private LineRenderer lineRenderer;
 
     private int devriyeIndex = 0;
+    private int devriyeYonu = 1; // 1: ileri, -1: geri
     private List<Vector3> aktifYol = new List<Vector3>();
     private int yolIndex = 0;
     private float gorunmemeSayaci = 0f;
@@ -102,7 +106,18 @@ public class GrafMuhafiz : MonoBehaviour
 
         if (Vector3.Distance(new Vector3(transform.position.x, 0, transform.position.z), new Vector3(hedef.x, 0, hedef.z)) < 0.25f)
         {
-            devriyeIndex = (devriyeIndex + 1) % devriyeRotasi.Length;
+            if (pingPongDevriye && devriyeRotasi.Length > 1)
+            {
+                if (devriyeIndex + devriyeYonu >= devriyeRotasi.Length || devriyeIndex + devriyeYonu < 0)
+                {
+                    devriyeYonu *= -1;
+                }
+                devriyeIndex += devriyeYonu;
+            }
+            else
+            {
+                devriyeIndex = (devriyeIndex + 1) % devriyeRotasi.Length;
+            }
         }
     }
 
@@ -110,14 +125,12 @@ public class GrafMuhafiz : MonoBehaviour
     {
         if (dogrudanGoruyor)
         {
-            // Görüþ hattý açýksa doðrudan oyuncuya koþ
             aktifYol = new List<Vector3> { oyuncu.position };
             yolIndex = 0;
             NoktayaIlerle(oyuncu.position, kovalamaHizi);
         }
         else
         {
-            // Duvar arkasýna geçtiyse Waypoint aðý üzerinden A* ile takip et
             yolYenilemeSayaci += Time.deltaTime;
             if (yolYenilemeSayaci >= 0.4f || aktifYol.Count == 0)
             {

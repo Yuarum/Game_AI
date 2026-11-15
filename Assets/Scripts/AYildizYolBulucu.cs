@@ -4,6 +4,8 @@ using UnityEngine;
 public class AYildizYolBulucu : MonoBehaviour
 {
     [SerializeField] private IzgaraHarita harita;
+    [SerializeField] private float egimCarpani = 10f; // Yokuþ çýkma cezasý
+    [SerializeField] private float maksTirmanmaYuksekligi = 1.2f; // Çok dik uçurumlarý geçilmez say
 
     private class Dugum
     {
@@ -65,7 +67,11 @@ public class AYildizYolBulucu : MonoBehaviour
                         if (!harita.yurunekbilir[kontrolX, kontrolZ] || kapaliListe.Contains(dugumler[kontrolX, kontrolZ]))
                             continue;
 
-                        // Çapraz geçiþlerde duvar köþesine takýlmayý önle
+                        // Yükseklik farký (Eðim) kontrolü
+                        float yukseklikFarki = Mathf.Abs(harita.yukseklikler[kontrolX, kontrolZ] - harita.yukseklikler[mevcut.x, mevcut.z]);
+                        if (yukseklikFarki > maksTirmanmaYuksekligi)
+                            continue;
+
                         if (dx != 0 && dz != 0)
                         {
                             if (!harita.yurunekbilir[mevcut.x + dx, mevcut.z] || !harita.yurunekbilir[mevcut.x, mevcut.z + dz])
@@ -73,8 +79,9 @@ public class AYildizYolBulucu : MonoBehaviour
                         }
 
                         Dugum komsu = dugumler[kontrolX, kontrolZ];
-                        float adimMaliyeti = (dx == 0 || dz == 0) ? 1f : 1.414f;
-                        float yeniGMaliyet = mevcut.gMaliyet + adimMaliyeti;
+                        float tabanMaliyet = (dx == 0 || dz == 0) ? 1f : 1.414f;
+                        float egimMaliyeti = yukseklikFarki * egimCarpani;
+                        float yeniGMaliyet = mevcut.gMaliyet + tabanMaliyet + egimMaliyeti;
 
                         if (yeniGMaliyet < komsu.gMaliyet || !acikListe.Contains(komsu))
                         {
